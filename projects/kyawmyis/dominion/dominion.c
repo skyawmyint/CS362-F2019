@@ -681,6 +681,301 @@ int getCost(int cardNumber)
     return -1;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// The following code below is the refactored card effect for the Baron card //
+///////////////////////////////////////////////////////////////////////////////
+int baronEffect(struct gameState *state, int choice1, int currentPlayer){
+
+    state->numBuys++;//Increase buys by 1!
+    if (choice1 > 0) { //Boolean true or going to discard an estate
+        int p = 0;//Iterator for hand!
+        int card_not_discarded = 1;//Flag for discard set!
+        while(card_not_discarded) {
+            if (state->hand[currentPlayer][p] == estate) { //Found an estate card!
+                ////////////ERROR 1 - equal instead of addition///////////////
+                state->coins = 4;//Add 4 coins to the amount of coins
+                state->discard[currentPlayer][state->discardCount[currentPlayer]] = state->hand[currentPlayer][p];
+                state->discardCount[currentPlayer]++;
+                for (; p < state->handCount[currentPlayer]; p++) {
+                    state->hand[currentPlayer][p] = state->hand[currentPlayer][p+1];
+                }
+                state->hand[currentPlayer][state->handCount[currentPlayer]] = -1;
+                state->handCount[currentPlayer]--;
+                card_not_discarded = 0;//Exit the loop
+            }
+            else if (p > state->handCount[currentPlayer]) {
+                if(DEBUG) {
+                    printf("No estate cards in your hand, invalid choice\n");
+                    printf("Must gain an estate if there are any\n");
+                }
+                if (supplyCount(estate, state) > 0) {
+                    gainCard(estate, state, 0, currentPlayer);
+
+                    state->supplyCount[estate]--;//Decrement estates
+                    if (supplyCount(estate, state) == 0) {
+                        isGameOver(state);
+                    }
+                }
+                card_not_discarded = 0;//Exit the loop
+            }
+
+            else {
+                p++;//Next card
+            }
+        }
+    }
+
+    else {
+        //////ERROR 2 - check if supply of estate less than 0 instead /////////
+        if (supplyCount(estate, state) < 0) {
+            gainCard(estate, state, 0, currentPlayer);//Gain an estate
+
+            state->supplyCount[estate]--;//Decrement Estates
+            if (supplyCount(estate, state) == 0) {
+                isGameOver(state);
+            }
+        }
+    }
+    return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// The following code below is the refactored card effect for the Minion card //
+////////////////////////////////////////////////////////////////////////////////
+int minionEffect(struct gameState *state, int handPos, int currentPlayer, int choice1, int choice2) {
+
+    ////////ERROR 3 - action added by 2 instead of 1.
+    //+1 action
+    state->numActions+=2;
+
+    //discard card from hand
+    discardCard(handPos, currentPlayer, state, 0);
+
+    if (choice1)
+    {
+        state->coins = state->coins + 2;
+    }
+    else if (choice2)		//discard hand, redraw 4, other players with 5+ cards discard hand and draw 4
+    {
+        //discard hand
+        while(numHandCards(state) > 0)
+        {
+            discardCard(handPos, currentPlayer, state, 0);
+        }
+
+        ////////ERROR 4 - less-than equal to in the counter//////
+        //draw 4
+        for (int i = 0; i <= 4; i++)
+        {
+            drawCard(currentPlayer, state);
+        }
+
+        //other players discard hand and redraw if hand size > 4
+        for (int i = 0; i < state->numPlayers; i++)
+        {
+            if (i != currentPlayer)
+            {
+                if ( state->handCount[i] > 4 )
+                {
+                    //discard hand
+                    while( state->handCount[i] > 0 )
+                    {
+                        discardCard(handPos, i, state, 0);
+                    }
+
+                    //draw 4
+                    for (int j = 0; j < 4; j++)
+                    {
+                        drawCard(i, state);
+                    }
+                }
+            }
+        }
+
+    }
+    return 0;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// The following code below is the refactored card effect for the Ambassador card //
+////////////////////////////////////////////////////////////////////////////////////
+
+int ambassadorEffect(struct gameState *state, int handPos, int currentPlayer, int choice1, int choice2){
+
+    int j = 0;		//used to check if player has enough cards to discard
+
+    //////////ERROR 5 - choice2 must be less than 5 and greater than -1. Does not follow logic of 0,1,2 cards return /////////
+    if (choice2 > 4 || choice2 < 0)
+    {
+        return -1;
+    }
+
+    if (choice1 == handPos)
+    {
+        return -1;
+    }
+
+    for (int i = 0; i < state->handCount[currentPlayer]; i++)
+    {
+        if (i != handPos && i == state->hand[currentPlayer][choice1] && i != choice1)
+        {
+            j++;
+        }
+    }
+    if (j < choice2)
+    {
+        return -1;
+    }
+
+    if (DEBUG)
+        printf("Player %d reveals card number: %d\n", currentPlayer, state->hand[currentPlayer][choice1]);
+
+    //increase supply count for choosen card by amount being discarded
+    state->supplyCount[state->hand[currentPlayer][choice1]] += choice2;
+
+    //each other player gains a copy of revealed card
+    for (int i = 0; i < state->numPlayers; i++)
+    {
+        /////////ERROR 6 - Conditional statement equal to instead of not equal to///////
+        if (i == currentPlayer)
+        {
+            gainCard(state->hand[currentPlayer][choice1], state, 0, i);
+        }
+    }
+
+    //discard played card from hand
+    discardCard(handPos, currentPlayer, state, 0);
+
+    //trash copies of cards returned to supply
+    for (j = 0; j < choice2; j++)
+    {
+        for (int i = 0; i < state->handCount[currentPlayer]; i++)
+        {
+            if (state->hand[currentPlayer][i] == state->hand[currentPlayer][choice1])
+            {
+                discardCard(i, currentPlayer, state, 1);
+                break;
+            }
+        }
+    }
+
+    return 0;
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+// The following code below is the refactored card effect for the Tribute card //
+/////////////////////////////////////////////////////////////////////////////////
+int tributeEffect(struct gameState *state, int currentPlayer, int tributeRevealedCards[2], int nextPlayer) {
+
+    if ((state->discardCount[nextPlayer] + state->deckCount[nextPlayer]) <= 1) {
+        if (state->deckCount[nextPlayer] > 0) {
+            tributeRevealedCards[0] = state->deck[nextPlayer][state->deckCount[nextPlayer]-1];
+            state->deckCount[nextPlayer]--;
+        }
+        else if (state->discardCount[nextPlayer] > 0) {
+            tributeRevealedCards[0] = state->discard[nextPlayer][state->discardCount[nextPlayer]-1];
+            state->discardCount[nextPlayer]--;
+        }
+        else {
+            //No Card to Reveal
+            if (DEBUG) {
+                printf("No cards to reveal\n");
+            }
+        }
+    }
+
+    else {
+        if (state->deckCount[nextPlayer] == 0) {
+            for (int i = 0; i < state->discardCount[nextPlayer]; i++) {
+                state->deck[nextPlayer][i] = state->discard[nextPlayer][i];//Move to deck
+                state->deckCount[nextPlayer]++;
+                state->discard[nextPlayer][i] = -1;
+                state->discardCount[nextPlayer]--;
+            }
+
+            shuffle(nextPlayer,state);//Shuffle the deck
+        }
+        tributeRevealedCards[0] = state->deck[nextPlayer][state->deckCount[nextPlayer]-1];
+        state->deck[nextPlayer][state->deckCount[nextPlayer]--] = -1;
+        state->deckCount[nextPlayer]--;
+        tributeRevealedCards[1] = state->deck[nextPlayer][state->deckCount[nextPlayer]-1];
+        state->deck[nextPlayer][state->deckCount[nextPlayer]--] = -1;
+        state->deckCount[nextPlayer]--;
+    }
+
+    if (tributeRevealedCards[0] == tributeRevealedCards[1]) { //If we have a duplicate card, just drop one
+        state->playedCards[state->playedCardCount] = tributeRevealedCards[1];
+        state->playedCardCount++;
+        tributeRevealedCards[1] = -1;
+    }
+
+    for (int i = 0; i <= 2; i ++) {
+        if (tributeRevealedCards[i] == copper || tributeRevealedCards[i] == silver || tributeRevealedCards[i] == gold) { //Treasure cards
+            //////////ERROR 7 - coins in state subtract by 2 ////////////
+            state->coins -= 2;
+        }
+
+        //////////ERROR 8 - removed revealed card tributeRevealedCards[i]==estate////////////
+        else if (tributeRevealedCards[i] == duchy || tributeRevealedCards[i] == province || tributeRevealedCards[i] == gardens || tributeRevealedCards[i] == great_hall) { //Victory Card Found
+            drawCard(currentPlayer, state);
+            drawCard(currentPlayer, state);
+        }
+        else { //Action Card
+            state->numActions = state->numActions + 2;
+        }
+    }
+
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// The following code below is the refactored card effect for the Mine card ///
+///////////////////////////////////////////////////////////////////////////////
+
+int mineEffect(struct gameState *state, int handPos, int choice1, int choice2, int currentPlayer){
+
+    int j = state->hand[currentPlayer][choice1];  //store card we will trash
+
+    ////////ERROR 9 - changed the conditional statement to have silver instead of copper ////////////
+    if (state->hand[currentPlayer][choice1] < silver || state->hand[currentPlayer][choice1] > gold)
+    {
+        return -1;
+    }
+
+    if (choice2 > treasure_map || choice2 < curse)
+    {
+        return -1;
+    }
+
+    if ( (getCost(state->hand[currentPlayer][choice1]) + 3) > getCost(choice2) )
+    {
+        return -1;
+    }
+
+    /////////ERROR 10 - changed the toFlag in the gainCard() function to 0 instead of 2. Adds to discard pile instead of hand.
+    gainCard(choice2, state, 0, currentPlayer);
+
+    //discard card from hand
+    discardCard(handPos, currentPlayer, state, 0);
+
+    //discard trashed card
+    for (int i = 0; i < state->handCount[currentPlayer]; i++)
+    {
+        if (state->hand[currentPlayer][i] == j)
+        {
+            discardCard(i, currentPlayer, state, 0);
+            break;
+        }
+    }
+
+    return 0;
+}
+
+
 int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState *state, int handPos, int *bonus)
 {
     int i;
@@ -805,40 +1100,12 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
     case gardens:
         return -1;
 
+        /////////////////////////////////////////////
+        // MODIFIED TO CALL FUNCTION mineEffect() //
+        // ///////////////////////////////////////////
     case mine:
-        j = state->hand[currentPlayer][choice1];  //store card we will trash
 
-        if (state->hand[currentPlayer][choice1] < copper || state->hand[currentPlayer][choice1] > gold)
-        {
-            return -1;
-        }
-
-        if (choice2 > treasure_map || choice2 < curse)
-        {
-            return -1;
-        }
-
-        if ( (getCost(state->hand[currentPlayer][choice1]) + 3) > getCost(choice2) )
-        {
-            return -1;
-        }
-
-        gainCard(choice2, state, 2, currentPlayer);
-
-        //discard card from hand
-        discardCard(handPos, currentPlayer, state, 0);
-
-        //discard trashed card
-        for (i = 0; i < state->handCount[currentPlayer]; i++)
-        {
-            if (state->hand[currentPlayer][i] == j)
-            {
-                discardCard(i, currentPlayer, state, 0);
-                break;
-            }
-        }
-
-        return 0;
+        return mineEffect(state, handPos, choice1, choice2, currentPlayer);
 
     case remodel:
         j = state->hand[currentPlayer][choice1];  //store card we will trash
@@ -888,58 +1155,12 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
         discardCard(handPos, currentPlayer, state, 0);
         return 0;
 
+        /////////////////////////////////////////////
+        // MODIFIED TO CALL FUNCTION baronEffect() //
+        /////////////////////////////////////////////
     case baron:
-        state->numBuys++;//Increase buys by 1!
-        if (choice1 > 0) { //Boolean true or going to discard an estate
-            int p = 0;//Iterator for hand!
-            int card_not_discarded = 1;//Flag for discard set!
-            while(card_not_discarded) {
-                if (state->hand[currentPlayer][p] == estate) { //Found an estate card!
-                    state->coins += 4;//Add 4 coins to the amount of coins
-                    state->discard[currentPlayer][state->discardCount[currentPlayer]] = state->hand[currentPlayer][p];
-                    state->discardCount[currentPlayer]++;
-                    for (; p < state->handCount[currentPlayer]; p++) {
-                        state->hand[currentPlayer][p] = state->hand[currentPlayer][p+1];
-                    }
-                    state->hand[currentPlayer][state->handCount[currentPlayer]] = -1;
-                    state->handCount[currentPlayer]--;
-                    card_not_discarded = 0;//Exit the loop
-                }
-                else if (p > state->handCount[currentPlayer]) {
-                    if(DEBUG) {
-                        printf("No estate cards in your hand, invalid choice\n");
-                        printf("Must gain an estate if there are any\n");
-                    }
-                    if (supplyCount(estate, state) > 0) {
-                        gainCard(estate, state, 0, currentPlayer);
 
-                        state->supplyCount[estate]--;//Decrement estates
-                        if (supplyCount(estate, state) == 0) {
-                            isGameOver(state);
-                        }
-                    }
-                    card_not_discarded = 0;//Exit the loop
-                }
-
-                else {
-                    p++;//Next card
-                }
-            }
-        }
-
-        else {
-            if (supplyCount(estate, state) > 0) {
-                gainCard(estate, state, 0, currentPlayer);//Gain an estate
-
-                state->supplyCount[estate]--;//Decrement Estates
-                if (supplyCount(estate, state) == 0) {
-                    isGameOver(state);
-                }
-            }
-        }
-
-
-        return 0;
+        return baronEffect(state, choice1, currentPlayer);
 
     case great_hall:
         //+1 Card
@@ -952,55 +1173,12 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
         discardCard(handPos, currentPlayer, state, 0);
         return 0;
 
+        //////////////////////////////////////////////
+        // MODIFIED TO CALL FUNCTION minionEffect() //
+        //////////////////////////////////////////////
     case minion:
-        //+1 action
-        state->numActions++;
 
-        //discard card from hand
-        discardCard(handPos, currentPlayer, state, 0);
-
-		if (choice1)
-        {
-            state->coins = state->coins + 2;
-        }
-        else if (choice2)		//discard hand, redraw 4, other players with 5+ cards discard hand and draw 4
-        {
-            //discard hand
-            while(numHandCards(state) > 0)
-            {
-                discardCard(handPos, currentPlayer, state, 0);
-            }
-
-            //draw 4
-            for (i = 0; i < 4; i++)
-            {
-                drawCard(currentPlayer, state);
-            }
-
-            //other players discard hand and redraw if hand size > 4
-            for (i = 0; i < state->numPlayers; i++)
-            {
-                if (i != currentPlayer)
-                {
-                    if ( state->handCount[i] > 4 )
-                    {
-                        //discard hand
-                        while( state->handCount[i] > 0 )
-                        {
-                            discardCard(handPos, i, state, 0);
-                        }
-
-                        //draw 4
-                        for (j = 0; j < 4; j++)
-                        {
-                            drawCard(i, state);
-                        }
-                    }
-                }
-            }
-
-        }
-        return 0;
+        return minionEffect(state, handPos, currentPlayer, choice1, choice2);
 
     case steward:
         if (choice1 == 1)
@@ -1025,122 +1203,19 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
         discardCard(handPos, currentPlayer, state, 0);
         return 0;
 
+        //////////////////////////////////////////////////
+        // MODIFIED TO CALL FUNCTION tributeEffect() //
+        //////////////////////////////////////////////////
     case tribute:
-        if ((state->discardCount[nextPlayer] + state->deckCount[nextPlayer]) <= 1) {
-            if (state->deckCount[nextPlayer] > 0) {
-                tributeRevealedCards[0] = state->deck[nextPlayer][state->deckCount[nextPlayer]-1];
-                state->deckCount[nextPlayer]--;
-            }
-            else if (state->discardCount[nextPlayer] > 0) {
-                tributeRevealedCards[0] = state->discard[nextPlayer][state->discardCount[nextPlayer]-1];
-                state->discardCount[nextPlayer]--;
-            }
-            else {
-                //No Card to Reveal
-                if (DEBUG) {
-                    printf("No cards to reveal\n");
-                }
-            }
-        }
 
-        else {
-            if (state->deckCount[nextPlayer] == 0) {
-                for (i = 0; i < state->discardCount[nextPlayer]; i++) {
-                    state->deck[nextPlayer][i] = state->discard[nextPlayer][i];//Move to deck
-                    state->deckCount[nextPlayer]++;
-                    state->discard[nextPlayer][i] = -1;
-                    state->discardCount[nextPlayer]--;
-                }
+        return tributeEffect(state, currentPlayer, &tributeRevealedCards[2], nextPlayer);
 
-                shuffle(nextPlayer,state);//Shuffle the deck
-            }
-            tributeRevealedCards[0] = state->deck[nextPlayer][state->deckCount[nextPlayer]-1];
-            state->deck[nextPlayer][state->deckCount[nextPlayer]--] = -1;
-            state->deckCount[nextPlayer]--;
-            tributeRevealedCards[1] = state->deck[nextPlayer][state->deckCount[nextPlayer]-1];
-            state->deck[nextPlayer][state->deckCount[nextPlayer]--] = -1;
-            state->deckCount[nextPlayer]--;
-        }
-
-        if (tributeRevealedCards[0] == tributeRevealedCards[1]) { //If we have a duplicate card, just drop one
-            state->playedCards[state->playedCardCount] = tributeRevealedCards[1];
-            state->playedCardCount++;
-            tributeRevealedCards[1] = -1;
-        }
-
-        for (i = 0; i <= 2; i ++) {
-            if (tributeRevealedCards[i] == copper || tributeRevealedCards[i] == silver || tributeRevealedCards[i] == gold) { //Treasure cards
-                state->coins += 2;
-            }
-
-            else if (tributeRevealedCards[i] == estate || tributeRevealedCards[i] == duchy || tributeRevealedCards[i] == province || tributeRevealedCards[i] == gardens || tributeRevealedCards[i] == great_hall) { //Victory Card Found
-                drawCard(currentPlayer, state);
-                drawCard(currentPlayer, state);
-            }
-            else { //Action Card
-                state->numActions = state->numActions + 2;
-            }
-        }
-
-        return 0;
-
+        //////////////////////////////////////////////////
+        // MODIFIED TO CALL FUNCTION ambassadorEffect() //
+        //////////////////////////////////////////////////
     case ambassador:
-        j = 0;		//used to check if player has enough cards to discard
 
-        if (choice2 > 2 || choice2 < 0)
-        {
-            return -1;
-        }
-
-        if (choice1 == handPos)
-        {
-            return -1;
-        }
-
-        for (i = 0; i < state->handCount[currentPlayer]; i++)
-        {
-            if (i != handPos && i == state->hand[currentPlayer][choice1] && i != choice1)
-            {
-                j++;
-            }
-        }
-        if (j < choice2)
-        {
-            return -1;
-        }
-
-        if (DEBUG)
-            printf("Player %d reveals card number: %d\n", currentPlayer, state->hand[currentPlayer][choice1]);
-
-        //increase supply count for choosen card by amount being discarded
-        state->supplyCount[state->hand[currentPlayer][choice1]] += choice2;
-
-        //each other player gains a copy of revealed card
-        for (i = 0; i < state->numPlayers; i++)
-        {
-            if (i != currentPlayer)
-            {
-                gainCard(state->hand[currentPlayer][choice1], state, 0, i);
-            }
-        }
-
-        //discard played card from hand
-        discardCard(handPos, currentPlayer, state, 0);
-
-        //trash copies of cards returned to supply
-        for (j = 0; j < choice2; j++)
-        {
-            for (i = 0; i < state->handCount[currentPlayer]; i++)
-            {
-                if (state->hand[currentPlayer][i] == state->hand[currentPlayer][choice1])
-                {
-                    discardCard(i, currentPlayer, state, 1);
-                    break;
-                }
-            }
-        }
-
-        return 0;
+        return ambassadorEffect(state, handPos, currentPlayer, choice1, choice2);
 
     case cutpurse:
 
@@ -1367,6 +1442,16 @@ int updateCoins(int player, struct gameState *state, int bonus)
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
 
 
 //end of dominion.c

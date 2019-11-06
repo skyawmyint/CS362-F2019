@@ -15,16 +15,15 @@ char *inputString()
     // TODO: rewrite this function
     // From the testme funtion specify a string of 6 chars.
     int length = 6;
-    char s[length];
+    char *s = (char*)malloc(sizeof(char)*length);
     // Create a string of lowercase characters randomly generated
     for(int i = 0; i<length-1; i++){
-      s[i] = (char)(rand()%25+97);
+      s[i] = (char)(rand()%26+97);
     }
-    // Last value of the string to terminate with \0
+    // Last value of the string is always \0
     s[length-1] = '\0';
     // Return the string
-    char *str = s;
-    return str;
+    return s;
 }
 
 void testme()

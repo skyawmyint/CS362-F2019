@@ -820,7 +820,7 @@ int ambassadorEffect(struct gameState *state, int handPos, int currentPlayer, in
 
     for (int i = 0; i < state->handCount[currentPlayer]; i++)
     {
-        if (i != handPos && i == state->hand[currentPlayer][choice1] && i != choice1)
+        if (i != handPos && state->hand[currentPlayer][i] == state->hand[currentPlayer][choice1] && i != choice1)
         {
             j++;
         }
@@ -869,8 +869,10 @@ int ambassadorEffect(struct gameState *state, int handPos, int currentPlayer, in
 /////////////////////////////////////////////////////////////////////////////////
 // The following code below is the refactored card effect for the Tribute card //
 /////////////////////////////////////////////////////////////////////////////////
-int tributeEffect(struct gameState *state, int currentPlayer, int tributeRevealedCards[2], int nextPlayer) {
+int tributeEffect(struct gameState *state, int currentPlayer, int nextPlayer) {
 
+    int tributeRevealedCards[2] = {-1,-1};
+    
     if ((state->discardCount[nextPlayer] + state->deckCount[nextPlayer]) <= 1) {
         if (state->deckCount[nextPlayer] > 0) {
             tributeRevealedCards[0] = state->deck[nextPlayer][state->deckCount[nextPlayer]-1];
@@ -913,7 +915,7 @@ int tributeEffect(struct gameState *state, int currentPlayer, int tributeReveale
         tributeRevealedCards[1] = -1;
     }
 
-    for (int i = 0; i <= 2; i ++) {
+    for (int i = 0; i < 2; i ++) {
         if (tributeRevealedCards[i] == copper || tributeRevealedCards[i] == silver || tributeRevealedCards[i] == gold) { //Treasure cards
             //////////ERROR 7 - coins in state subtract by 2 ////////////
             state->coins -= 2;
@@ -986,7 +988,6 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
     int currentPlayer = whoseTurn(state);
     int nextPlayer = currentPlayer + 1;
 
-    int tributeRevealedCards[2] = {-1, -1};
     int temphand[MAX_HAND];// moved above the if statement
     int drawntreasure=0;
     int cardDrawn;
@@ -1208,7 +1209,7 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
         //////////////////////////////////////////////////
     case tribute:
 
-        return tributeEffect(state, currentPlayer, &tributeRevealedCards[2], nextPlayer);
+        return tributeEffect(state, currentPlayer, nextPlayer);
 
         //////////////////////////////////////////////////
         // MODIFIED TO CALL FUNCTION ambassadorEffect() //

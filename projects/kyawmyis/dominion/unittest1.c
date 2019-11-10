@@ -129,7 +129,7 @@ int main () {
     G.hand[0][2] = copper;
     G.hand[0][3] = copper;
     G.hand[0][4] = copper;
-    G.handCount[0] = 4;
+    G.handCount[0] = 5;
     G.numBuys = 1;
     numBuysOriginal = G.numBuys;
     G.coins = 0;
@@ -208,7 +208,7 @@ int main () {
         printf ("Subtest 4 Result...Buy+1 Gained?: Fail\n");
     }
     // Check if the player has the correct number of coins in hand
-    if(numBuysOriginal == G.coins-4){
+    if(numCoinsOriginal == G.coins-4){
         printf ("Subtest 4 Result...Coins+4 Gained?: Pass\n");
     }
     else{

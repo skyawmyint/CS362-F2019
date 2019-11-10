@@ -182,7 +182,7 @@ int main () {
     G.handCount[0] = 5;
     G.numBuys = 1;
     numBuysOriginal = G.numBuys;
-    G.coins = 0;
+    G.coins = 1;
     numCoinsOriginal = G.coins;
     
     testBaronEffect = baronEffect(&G, 1, 0);

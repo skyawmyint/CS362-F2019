@@ -294,7 +294,7 @@ int main () {
     
     G.deckCount[1] = 1;
     G.discardCount[1] = 0;
-    G.discard[1][0] = silver;
+    G.deck[1][0] = silver;
     
     testTributeEffect = tributeEffect(&G, 0, 1);
     

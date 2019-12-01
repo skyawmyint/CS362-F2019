@@ -21,17 +21,37 @@ runtests: testDrawCard
 	gcov dominion.c >> unittestresult.out
 	cat dominion.c.gcov >> unittestresult.out
 
-
-unittestresults: unittest1mine.c unittest2mine.c unittest3remodel.c unittest4gameover.c dominion.o interface.o rngs.o
+UnitTestBug1: unittest1mine.c dominion.o interface.o rngs.o
 	gcc -o UnitTestBug1 unittest1mine.c dominion.o rngs.o interface.o $(CFLAGS)
+
+UnitTestBug2: unittest2mine.c dominion.o interface.o rngs.o
 	gcc -o UnitTestBug2 unittest2mine.c dominion.o rngs.o interface.o $(CFLAGS)
+
+UnitTestBug3: unittest3remodel.c dominion.o interface.o rngs.o
 	gcc -o UnitTestBug3 unittest3remodel.c dominion.o rngs.o interface.o $(CFLAGS)
+
+UnitTestBug4: unittest4gameover.c dominion.o interface.o rngs.o
 	gcc -o UnitTestBug4 unittest4gameover.c dominion.o rngs.o interface.o $(CFLAGS)
-	./UnitTestBug1
-	./UnitTestBug2
-	./UnitTestBug3
-	./UnitTestBug4
-	gcov dominion.c -b -f >> unittestresults.out
+
+UnitTestBug8: unittest8.c dominion.o rngs.o
+	gcc -o UnitTestBug8 unittest8.c dominion.o rngs.o $(CFLAGS)
+
+UnitTestBug9: unittest9.c dominion.o rngs.o
+	gcc -o UnitTestBug9 unittest9.c dominion.o rngs.o $(CFLAGS)
+
+UnitTestBug10: unittest10.c dominion.o rngs.o
+	gcc -o UnitTestBug10 unittest10.c dominion.o rngs.o $(CFLAGS)
+
+unittestresults: UnitTestBug1 UnitTestBug2 UnitTestBug3 UnitTestBug4 UnitTestBug8 UnitTestBug9 UnitTestBug10
+	./UnitTestBug1 >> unittestresults.out
+	./UnitTestBug2 >> unittestresults.out
+	./UnitTestBug3 >> unittestresults.out
+	./UnitTestBug4 >> unittestresults.out
+	./UnitTestBug8 >> unittestresults.out
+	./UnitTestBug9 >> unittestresults.out
+	./UnitTestBug10 >> unittestresults.out
+	gcov -b -f dominion.c  >> unittestresults.out
+	cat dominion.c.gcov >> unittestresults.out
 
 player: player.c interface.o
 	gcc -o player player.c -g  dominion.o rngs.o interface.o $(CFLAGS)

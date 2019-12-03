@@ -1068,16 +1068,15 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
             tributeRevealedCards[1] = -1;
         }
 
-        for (i = 0; i <= 2; i ++) {
+        for (i = 0; i <= 1; i ++) {
             if (tributeRevealedCards[i] == copper || tributeRevealedCards[i] == silver || tributeRevealedCards[i] == gold) { //Treasure cards
                 state->coins += 2;
             }
-
             else if (tributeRevealedCards[i] == estate || tributeRevealedCards[i] == duchy || tributeRevealedCards[i] == province || tributeRevealedCards[i] == gardens || tributeRevealedCards[i] == great_hall) { //Victory Card Found
                 drawCard(currentPlayer, state);
                 drawCard(currentPlayer, state);
             }
-            else { //Action Card
+            else if (tributeRevealedCards[i] != -1) { //Action Card
                 state->numActions = state->numActions + 2;
             }
         }

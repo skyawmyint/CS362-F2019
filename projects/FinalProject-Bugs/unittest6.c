@@ -1,4 +1,5 @@
 #include "dominion.h"
+#include "dominion_helpers.h"
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -9,7 +10,6 @@
 int main () {
     
     int numPlayer = 2; // Set the number of players
-    int scoreReturned; // Player's score
     int r;
     int startCoinCount;
     int endCoinCount;

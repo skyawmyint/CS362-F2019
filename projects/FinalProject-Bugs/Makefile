@@ -33,6 +33,9 @@ UnitTestBug3: unittest3remodel.c dominion.o interface.o rngs.o
 UnitTestBug4: unittest4gameover.c dominion.o interface.o rngs.o
 	gcc -o UnitTestBug4 unittest4gameover.c dominion.o rngs.o interface.o $(CFLAGS)
 
+UnitTestBug5: unittest5.c dominion.o rngs.o
+	gcc -o UnitTestBug5 unittest5.c dominion.o rngs.o $(CFLAGS)
+
 UnitTestBug8: unittest8.c dominion.o rngs.o
 	gcc -o UnitTestBug8 unittest8.c dominion.o rngs.o $(CFLAGS)
 
@@ -42,11 +45,12 @@ UnitTestBug9: unittest9.c dominion.o rngs.o
 UnitTestBug10: unittest10.c dominion.o rngs.o
 	gcc -o UnitTestBug10 unittest10.c dominion.o rngs.o $(CFLAGS)
 
-unittestresults: UnitTestBug1 UnitTestBug2 UnitTestBug3 UnitTestBug4 UnitTestBug8 UnitTestBug9 UnitTestBug10
+unittestresults: UnitTestBug1 UnitTestBug2 UnitTestBug3 UnitTestBug4 UnitTestBug5 UnitTestBug8 UnitTestBug9 UnitTestBug10
 	./UnitTestBug1 >> unittestresults.out
 	./UnitTestBug2 >> unittestresults.out
 	./UnitTestBug3 >> unittestresults.out
 	./UnitTestBug4 >> unittestresults.out
+	./UnitTestBug5 >> unittestresults.out
 	./UnitTestBug8 >> unittestresults.out
 	./UnitTestBug9 >> unittestresults.out
 	./UnitTestBug10 >> unittestresults.out

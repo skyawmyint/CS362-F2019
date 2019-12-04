@@ -37,7 +37,7 @@ int main () {
     G.deck[1][0] = 1;
     G.deck[1][1] = 1;
     G.deck[1][2] = 1;
-    G.deck[1][3] = 9; // Action card
+    G.deck[1][3] = 1; // Treasure card
     G.deck[1][4] = 8; // Action card
 
     startNumActions = G.numActions;
@@ -48,7 +48,7 @@ int main () {
     endNumActions = G.numActions;
 
     // Check 4 actions have been added
-    if(startNumActions != (endNumActions - 4)){
+    if(startNumActions == (endNumActions - 2)){
         printf ("Player actions correct?: PASS\n");
     } else {
         printf ("Player actions correct?: FAIL\n");

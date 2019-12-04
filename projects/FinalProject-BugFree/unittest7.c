@@ -48,7 +48,7 @@ int main () {
     endNumActions = G.numActions;
 
     // Check 4 actions have been added
-    if(startNumActions != (endNumActions - 4)){
+    if(startNumActions == (endNumActions - 4)){
         printf ("Player actions correct?: PASS\n");
     } else {
         printf ("Player actions correct?: FAIL\n");
